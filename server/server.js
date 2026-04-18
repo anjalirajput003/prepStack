@@ -67,7 +67,6 @@ app.post("/login", async (req, res) => {
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "14d",
     });
-    res.json({ token });
 
     //4. login Successfully
     res.json({ message: "Login successful", token });
@@ -76,10 +75,17 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/dashboard", authMiddleware, (req, res) => {
-  res.send("hello dashboard");
-  console.log("success");
+app.get("/profile", authMiddleware, async (req, res) => {
+  const { userId } = req.user;
+  const user = await User.findById(userId);
+  console.log(user);
+  res.json({ user });
 });
+
+// app.get("/dashboard", authMiddleware, (req, res) => {
+//   res.send("hello dashboard");
+//   console.log("success");
+// });
 
 //server start
 app.listen(8080, () => {
