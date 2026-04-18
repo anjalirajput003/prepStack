@@ -7,12 +7,12 @@ const authMiddleware = (req, res, next) => {
   // const user = req.body;
   try{
   const authHeader = req.headers.authorization;
-  console.log(authHeader);
+  // console.log(authHeader);
   const token = authHeader.split(" ")[1];
-  console.log(token);
+  // console.log(token);
 
-  const userVerified = jwt.verify(token, process.env.JWT_SECRET);
-  req.user = userVerified;
+  const userVerification = jwt.verify(token, process.env.JWT_SECRET);
+  req.user = userVerification;
 
   next();
   }catch(err){

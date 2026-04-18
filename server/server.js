@@ -17,7 +17,7 @@ app.use(express.json());
 
 //database connection
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URL)
   .then(() => {
     console.log("MONGODB CONNECTED");
   })
@@ -78,14 +78,22 @@ app.post("/login", async (req, res) => {
 app.get("/profile", authMiddleware, async (req, res) => {
   const { userId } = req.user;
   const user = await User.findById(userId);
-  console.log(user);
+  // console.log(user);
   res.json({ user });
 });
 
-// app.get("/dashboard", authMiddleware, (req, res) => {
-//   res.send("hello dashboard");
-//   console.log("success");
-// });
+app.put("/profile", authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const { name } = req.body;
+    const user = await User.findByIdAndUpdate(userId, { name }, { new: true });
+    res.json({ user });
+  } catch (err) {
+    res
+      .status(400)
+      .json({ message: "Error updating profile", error: err.message });
+  }
+});
 
 //server start
 app.listen(8080, () => {
