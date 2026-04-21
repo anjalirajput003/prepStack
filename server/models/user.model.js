@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-
+  
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -22,6 +22,30 @@ const userSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
+  },
+  skills: {
+    type: [String],
+    default: [],
+  },
+  category: {
+    type: String,
+    enum: [
+      "HR",
+      "Tech",
+      "Finance",
+      "Marketing",
+      "Healthcare",
+      "Non-Tech",
+      "Others",
+    ],
+  },
+  rating: {
+    type: Number,
+    default: 0,
+  },
+  interviewsTaken: {
+    type: Number,
+    default: 0,
   },
 });
 

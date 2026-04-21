@@ -6,6 +6,7 @@ import User from "./models/user.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import authMiddleware from "./middleware/authMiddleware.js";
+import Interview from "./models/interview.model.js";
 
 dotenv.config();
 
@@ -28,7 +29,16 @@ mongoose
 //signup route
 app.post("/signup", async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const {
+      name,
+      email,
+      password,
+      role,
+      skills,
+      category,
+      rating,
+      interviewsTaken,
+    } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
@@ -36,11 +46,17 @@ app.post("/signup", async (req, res) => {
       email,
       password: hashedPassword,
       role,
+      skills,
+      category,
+      rating,
+      interviewsTaken,
     });
 
     res.status(201).json({ message: "User Created Successfully", user });
   } catch (err) {
-    res.status(500).json({ message: "Error creating user", err });
+    res
+      .status(500)
+      .json({ message: "Error creating user", error: err.message });
   }
 });
 
@@ -92,6 +108,103 @@ app.put("/profile", authMiddleware, async (req, res) => {
     res
       .status(400)
       .json({ message: "Error updating profile", error: err.message });
+  }
+});
+
+//get list of interviewers based on category
+app.get("/interviewers", async (req, res) => {
+  // const { role } = req.params;
+  try {
+    const { category } = req.query;
+    let filter = { role: "interviewer" };
+    if (category && category.trim() !== "") {
+      filter.category = category;
+    }
+    const interviewers = await User.find(filter).select("-password");
+    res.json(interviewers);
+    console.log(interviewers);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error fetching interviewers", error: err.message });
+  }
+});
+
+//get interviewer by id
+app.get("/interviewers/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const interviewer = await User.findById(id).select("-password");
+    if (!interviewer) {
+      return res.status(400).json({ message: "interviewer not found!" });
+    }
+    res.json(interviewer);
+    console.log(interviewer);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error fetching interviewer", error: err.message });
+  }
+});
+
+//interview request
+app.post("/interview/request", authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const intervieweeId = userId;
+    const { interviewerId, category } = req.body;
+    await Interview.create({
+      interviewerId,
+      intervieweeId,
+      category,
+    });
+    res.status(201).json({ message: "Interview request sent", interview });
+  } catch (err) {
+    res
+      .status(401)
+      .json({ message: "Error making interview request", error: err.message });
+  }
+});
+
+app.get("/interview/requests", authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.user;
+
+    const requests = await Interview.find({
+      interviewerId: userId,
+      status: "pending",
+    })
+      .populate("intervieweeId", "name email")
+      .select("-__v");
+    res.json(requests);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error fetching requests", error: err.message });
+  }
+});
+
+app.put("/interview/:id", authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const allowed = ["accepted", "rejected"];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ message: "Invalid Status" });
+    }
+    const updatedInterview = await Interview.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true },
+    );
+    if (!updatedInterview) {
+      return res.status(404).json({ message: "Interview not found" });
+    }
+    res.status(201).json({ message: `Interview ${status}`, updatedInterview });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error updating interview ", error: err.message });
   }
 });
 
