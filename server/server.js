@@ -208,6 +208,72 @@ app.put("/interview/:id", authMiddleware, async (req, res) => {
   }
 });
 
+//interview history
+app.get("/interview/history", authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const user = await User.find(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+    let interviews;
+
+    if (user.role === "interviewer") {
+      interviews = await Interview.find({ interviewerId: userId }) //are they equal if yes then do next line
+        .populate("intervieweeId", "name email")
+        .sort({ scheduledAt: -1 }); //sort by latest first
+    } else {
+      interviews = await Interview.find({ intervieweeId: userId })
+        .populate("interviewerId", "name email skills")
+        .sort({ scheduledAt: -1 });
+    }
+    res.json(interviews);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error fetching history", error: err.message });
+  }
+});
+
+//role switch
+app.put("/user/switch-role", authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+
+    if (user.role === "interviewer") {
+      user.role = "interviewee";
+    } else {
+      user.role = "interviewer";
+    }
+    await user.save();
+    res.json({ message: "Successfully switched user", role: user.role });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error switching role", error: err.message });
+  }
+});
+
+//get current user
+app.get("/user/me", authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const user = await User.findById(userId).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+    res.json(user);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error getting user!", error: err.message });
+  }
+});
+
 //server start
 app.listen(8080, () => {
   console.log("Server is running on port 8080");
