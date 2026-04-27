@@ -81,8 +81,9 @@ app.post("/login", async (req, res) => {
 
     //3. generate token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "14d",
+      expiresIn: "30d",
     });
+    console.log("token received:", token);
 
     //4. login Successfully
     res.json({ message: "Login successful", token });
@@ -153,10 +154,15 @@ app.post("/interview/request", authMiddleware, async (req, res) => {
     const { userId } = req.user;
     const intervieweeId = userId;
     const { interviewerId, category } = req.body;
-    await Interview.create({
+    if (!interviewerId || !category) {
+      return res.status(400).json({ message: "Missing fields" });
+    }
+    const interview = await Interview.create({
       interviewerId,
       intervieweeId,
       category,
+      status: "pending",
+      scheduledAt: new Date(),
     });
     res.status(201).json({ message: "Interview request sent", interview });
   } catch (err) {
