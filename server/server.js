@@ -92,6 +92,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
+//profile route
 app.get("/profile", authMiddleware, async (req, res) => {
   const { userId } = req.user;
   const user = await User.findById(userId);
@@ -99,6 +100,7 @@ app.get("/profile", authMiddleware, async (req, res) => {
   res.json({ user });
 });
 
+//username update
 app.put("/profile", authMiddleware, async (req, res) => {
   try {
     const { userId } = req.user;
@@ -113,7 +115,7 @@ app.put("/profile", authMiddleware, async (req, res) => {
 });
 
 //get list of interviewers based on category
-app.get("/interviewers", async (req, res) => {
+app.get("/interviewers", authMiddleware, async (req, res) => {
   // const { role } = req.params;
   try {
     const { category } = req.query;
@@ -149,7 +151,7 @@ app.get("/interviewers/:id", async (req, res) => {
 });
 
 //interview request
-app.post("/interview/request", authMiddleware, async (req, res) => {
+app.post("/interview", authMiddleware, async (req, res) => {
   try {
     const { userId } = req.user;
     const intervieweeId = userId;
@@ -157,6 +159,23 @@ app.post("/interview/request", authMiddleware, async (req, res) => {
     if (!interviewerId || !category) {
       return res.status(400).json({ message: "Missing fields" });
     }
+
+    const interviewExists = await Interview.findOne({
+      interviewerId,
+      intervieweeId,
+      status: "pending",
+    });
+    if (interviewExists) {
+      return res.status(409).json({
+        message: "Interview request already sent",
+      });
+    }
+    if (interviewerId === intervieweeId) {
+      return res
+        .status(400)
+        .json({ message: "Cannot send request to yourself" });
+    }
+
     const interview = await Interview.create({
       interviewerId,
       intervieweeId,
@@ -167,50 +186,90 @@ app.post("/interview/request", authMiddleware, async (req, res) => {
     res.status(201).json({ message: "Interview request sent", interview });
   } catch (err) {
     res
-      .status(401)
+      .status(500)
       .json({ message: "Error making interview request", error: err.message });
   }
 });
 
-app.get("/interview/requests", authMiddleware, async (req, res) => {
+//interview requests an interviewer got
+app.get("/interview/received", authMiddleware, async (req, res) => {
   try {
     const { userId } = req.user;
 
-    const requests = await Interview.find({
+    const receivedRequests = await Interview.find({
       interviewerId: userId,
-      status: "pending",
+      // status: "pending",
     })
       .populate("intervieweeId", "name email")
       .select("-__v");
-    res.json(requests);
+    res.status(200).json({
+      message: "Received interview requests fetched Successfully",
+      requests: receivedRequests,
+    });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error fetching requests", error: err.message });
+    res.status(500).json({
+      message: "Unable to fetch received requests",
+      error: err.message,
+    });
   }
 });
 
+//interview status update
 app.put("/interview/:id", authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
+    const { userId } = req.user;
     const allowed = ["accepted", "rejected"];
     if (!allowed.includes(status)) {
       return res.status(400).json({ message: "Invalid Status" });
     }
-    const updatedInterview = await Interview.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true },
-    );
-    if (!updatedInterview) {
-      return res.status(404).json({ message: "Interview not found" });
+
+    //   const updatedInterview = await Interview.findByIdAndUpdate(
+    //     id,
+    //     { status },
+    //     { new: true },
+    //   );
+    //   if (!updatedInterview) {
+    //     return res.status(404).json({ message: "Interview not found" });
+    //   }
+    //   res.status(201).json({ message: `Interview ${status}`, updatedInterview });
+    // } catch (err) {
+    //   res
+    //     .status(500)
+    //     .json({ message: "Error updating interview ", error: err.message });
+
+    const interview = await interview.findById(id);
+
+    if (!interview) {
+      return res.status(400).json({ message: "Interview request not found" });
     }
-    res.status(201).json({ message: `Interview ${status}`, updatedInterview });
+
+    //only interviewer can update
+    if (interview.interviewerId.toString() !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to update this request" });
+    }
+
+    //only pending requests can be updated
+    if (interview.status !== "pending") {
+      return res
+        .status(400)
+        .json({ message: "Interview request already processed" });
+    }
+
+    interview.status = status;
+
+    await interview.save(
+      res
+        .status(200)
+        .json({ message: `Interview request ${status}`, interview }),
+    );
   } catch (err) {
     res
       .status(500)
-      .json({ message: "Error updating interview ", error: err.message });
+      .json({ message: "Error updating interview", error: err.message });
   }
 });
 
@@ -218,7 +277,7 @@ app.put("/interview/:id", authMiddleware, async (req, res) => {
 app.get("/interview/history", authMiddleware, async (req, res) => {
   try {
     const { userId } = req.user;
-    const user = await User.find(userId);
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found!" });
     }
@@ -238,6 +297,25 @@ app.get("/interview/history", authMiddleware, async (req, res) => {
     res
       .status(500)
       .json({ message: "Error fetching history", error: err.message });
+  }
+});
+
+//interviews request
+app.get("/interview/my", authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const requests = await Interview.find({ intervieweeId: userId }).populate(
+      "interviewerId",
+      "name email category skills",
+    );
+    res
+      .status(200)
+      .json({ message: "Interview requests fetched Successfully", requests });
+    console.log(requests);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Unable to get requests", error: err.message });
   }
 });
 

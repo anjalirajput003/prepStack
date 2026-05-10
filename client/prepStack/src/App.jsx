@@ -7,7 +7,9 @@ import History from "./pages/History";
 import Requests from "./pages/Requests";
 import InterviewersList from "./pages/InterviewersList";
 import ProtectedRoute from "./components/ProtectedRoute";
+import MyRequests from "./pages/MyRequests";
 import "./App.css";
+import ReceivedRequests from "./pages/ReceivedRequests";
 
 function App() {
   return (
@@ -39,11 +41,27 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
+        {/* <Route
           path="/requests"
           element={
             <ProtectedRoute>
               <Requests />
+            </ProtectedRoute>
+          }
+        /> */}
+        <Route
+          path="/my-requests"
+          element={
+            <ProtectedRoute>
+              <MyRequests />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/received-requests"
+          element={
+            <ProtectedRoute>
+              <ReceivedRequests />
             </ProtectedRoute>
           }
         />
