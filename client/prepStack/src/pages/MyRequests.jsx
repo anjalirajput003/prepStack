@@ -18,9 +18,27 @@ const MyRequests = () => {
     getMyRequests();
   }, []);
 
+  async function handleCancel(interviewId) {
+    try {
+      await fetchWithAuth(`/interview/${interviewId}/cancel`, {
+        method: "PUT",
+      });
+
+      setRequests((prevRequests) =>
+        prevRequests.map((request) =>
+          request._id === interviewId
+            ? { ...request, status: "cancelled" }
+            : request,
+        ),
+      );
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
   return (
     <div>
-      <h2>My Intervieew Requests</h2>
+      <h2>My Interview Requests</h2>
 
       {requests.length === 0 ? (
         <p>No request sent yet</p>
@@ -31,8 +49,28 @@ const MyRequests = () => {
             <p>Category: {request.category}</p>
             <p>Status: {request.status}</p>
             <p>
-              Scheduled At: {new Date(request.scheduledAt).toLocaleString()}
+              Scheduled At:{" "}
+              {request.scheduledAt
+                ? new Date(request.scheduledAt).toLocaleString()
+                : "Not scheduled yet"}
             </p>
+            <p>
+              Requested At:{" "}
+              {request.requestedAt
+                ? new Date(request.requestedAt).toLocaleString()
+                : "Older request (timestamp unavailable)"}
+            </p>
+
+            {request.status === "cancelled" ? (
+              <button disabled>Interview cancelled</button>
+            ) : (
+              request.status !== "completed" &&
+              request.status !== "rejected" && (
+                <button onClick={() => handleCancel(request._id)}>
+                  Cancel Interview
+                </button>
+              )
+            )}
             <hr />
           </div>
         ))

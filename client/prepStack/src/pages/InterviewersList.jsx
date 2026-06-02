@@ -39,7 +39,7 @@ const InterviewersList = () => {
         const data = await fetchWithAuth("/interview/my");
         const myRequests = data.requests;
         const ids = myRequests.map((request) => {
-          return request.interviewerId;
+          return request.interviewerId._id;
         });
         setRequestSent(ids);
       } catch (err) {

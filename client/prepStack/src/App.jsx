@@ -10,6 +10,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import MyRequests from "./pages/MyRequests";
 import "./App.css";
 import ReceivedRequests from "./pages/ReceivedRequests";
+import InterviewRoom from "./pages/InterviewRoom";
 
 function App() {
   return (
@@ -62,6 +63,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ReceivedRequests />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/interview-room/:interviewId"
+          element={
+            <ProtectedRoute>
+              <InterviewRoom />
             </ProtectedRoute>
           }
         />

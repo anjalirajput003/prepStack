@@ -28,12 +28,32 @@ const interviewSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "accepted", "rejected", "completed"],
+    enum: [
+      "pending",
+      "accepted",
+      "scheduled",
+      "rejected",
+      "completed",
+      "cancelled",
+    ],
     default: "pending",
+  },
+  requestedAt: {
+    type: Date,
+    default: Date.now,
   },
   scheduledAt: {
     type: Date,
-    default: Date.now,
+    default: null,
+  },
+  rating: {
+    type: Number,
+    min: 1,
+    max: 5,
+  },
+  feedback: {
+    type: String,
+    trim: true,
   },
 });
 

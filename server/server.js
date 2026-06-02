@@ -7,6 +7,9 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import authMiddleware from "./middleware/authMiddleware.js";
 import Interview from "./models/interview.model.js";
+import http from "http";
+import { Server } from "socket.io";
+import { log } from "console";
 
 dotenv.config();
 
@@ -181,7 +184,6 @@ app.post("/interview", authMiddleware, async (req, res) => {
       intervieweeId,
       category,
       status: "pending",
-      scheduledAt: new Date(),
     });
     res.status(201).json({ message: "Interview request sent", interview });
   } catch (err) {
@@ -214,62 +216,208 @@ app.get("/interview/received", authMiddleware, async (req, res) => {
   }
 });
 
-//interview status update
+//interview status update -> accept, reject
 app.put("/interview/:id", authMiddleware, async (req, res) => {
+  console.log("PUT ROUTE HIT");
+
   try {
     const { id } = req.params;
     const { status } = req.body;
     const { userId } = req.user;
+
+    console.log("Request ID:", id);
+    console.log("Status:", status);
+    console.log("Logged in user:", userId);
+
     const allowed = ["accepted", "rejected"];
+
     if (!allowed.includes(status)) {
-      return res.status(400).json({ message: "Invalid Status" });
+      return res.status(400).json({
+        message: "Invalid status",
+      });
     }
 
-    //   const updatedInterview = await Interview.findByIdAndUpdate(
-    //     id,
-    //     { status },
-    //     { new: true },
-    //   );
-    //   if (!updatedInterview) {
-    //     return res.status(404).json({ message: "Interview not found" });
-    //   }
-    //   res.status(201).json({ message: `Interview ${status}`, updatedInterview });
-    // } catch (err) {
-    //   res
-    //     .status(500)
-    //     .json({ message: "Error updating interview ", error: err.message });
+    const interview = await Interview.findById(id);
 
-    const interview = await interview.findById(id);
+    console.log("Interview found:", interview);
 
     if (!interview) {
-      return res.status(400).json({ message: "Interview request not found" });
+      return res.status(404).json({
+        message: "Interview request not found",
+      });
     }
 
-    //only interviewer can update
-    if (interview.interviewerId.toString() !== userId) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to update this request" });
+    console.log("Interviewer ID:", interview.interviewerId);
+    console.log("Type:", typeof interview.interviewerId);
+
+    if (String(interview.interviewerId) !== String(userId)) {
+      return res.status(403).json({
+        message: "Not authorized",
+      });
     }
 
-    //only pending requests can be updated
     if (interview.status !== "pending") {
-      return res
-        .status(400)
-        .json({ message: "Interview request already processed" });
+      return res.status(400).json({
+        message: "Already processed",
+      });
     }
 
     interview.status = status;
 
-    await interview.save(
-      res
-        .status(200)
-        .json({ message: `Interview request ${status}`, interview }),
-    );
+    await interview.save();
+
+    res.status(200).json({
+      message: "Updated successfully",
+      interview,
+    });
   } catch (err) {
+    console.log("FULL BACKEND ERROR:", err);
+
+    res.status(500).json({
+      message: "Error updating interview",
+    });
+  }
+});
+
+//interview schedule by interviewer
+app.put("/interview/:id/schedule", authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params; //interview id
+    const { scheduledAt } = req.body;
+    const { userId } = req.user;
+
+    if (!scheduledAt) {
+      return res
+        .status(400)
+        .json({ message: "Interview date/time is required" });
+    }
+
+    const interview = await Interview.findById(id);
+
+    if (!interview) {
+      return res.status(404).json({ message: "Interview doesn't exist" });
+    }
+
+    //only interviewer can schedule interview
+    if (String(interview.interviewerId) !== String(userId)) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to schedule this interview" });
+    }
+
+    //only accepted interview can be scheduled
+    if (interview.status !== "accepted") {
+      return res
+        .status(400)
+        .json({ message: "Only accepted interviews can be scheduled" });
+    }
+
+    //future date validation
+    const scheduledDate = new Date(scheduledAt);
+
+    if (scheduledDate <= new Date()) {
+      return res
+        .status(400)
+        .json({ message: "Please choose a future date/time" });
+    }
+
+    interview.scheduledAt = scheduledDate;
+    interview.status = "scheduled";
+
+    await interview.save();
+
+    res
+      .status(200)
+      .json({ message: "Interview schleduled successfully", interview });
+  } catch (err) {
+    console.log("SCHEDULING ERROR: ", err);
     res
       .status(500)
-      .json({ message: "Error updating interview", error: err.message });
+      .json({ message: "Error scheduling interview", error: err.message });
+  }
+});
+
+//interview cancellation
+app.put("/interview/:id/cancel", authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.user;
+    const interview = await Interview.findById(id);
+
+    if (!interview) {
+      return res.status(404).json({ message: "Interview not found" });
+    }
+
+    //checking whether the cancellation request is made by interviewer or interviewee because only these people can request cancellation
+    const isInterviewer = String(interview.interviewerId) === String(userId);
+    const isInterviewee = String(interview.intervieweeId) === String(userId);
+
+    if (!isInterviewer && !isInterviewee) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to cancel this interview" });
+    }
+
+    if (
+      interview.status === "rejected" ||
+      interview.status === "completed" ||
+      interview.status === "cancelled"
+    ) {
+      return res
+        .status(400)
+        .json({ message: "This interview is already cancelled" });
+    }
+
+    interview.status = "cancelled";
+    await interview.save();
+
+    res
+      .status(200)
+      .json({ message: "Interview cancelled successfully", interview });
+  } catch (err) {
+    console.log("CANCEL ERROR", err);
+    res
+      .status(500)
+      .json({ message: "Error cancelling interview", error: err.message });
+  }
+});
+
+//interview complete
+app.put("/interview/:id/complete", authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.user;
+
+    const interview = await Interview.findById(id);
+
+    if (!interview) {
+      return res.status(404).json({ message: "Interview not found" });
+    }
+
+    //only interviewer can complete
+    if (String(interview.interviewerId) !== String(userId)) {
+      return res
+        .status(403)
+        .json({ message: "Only interviewers can mark interview as completed" });
+    }
+
+    //only scheduled interviews can be completed
+    if (interview.status !== "scheduled") {
+      return res
+        .status(400)
+        .json({ message: "Only scheduled interviews can be marked completed" });
+    }
+
+    interview.status = "completed";
+    await interview.save();
+
+    res
+      .status(200)
+      .json({ message: "Interview marked as completed", interview });
+  } catch (err) {
+    console.log("COMPLETE ERROR", err);
+
+    res.status(500).json({ message: "Error completing interview" });
   }
 });
 
@@ -277,30 +425,98 @@ app.put("/interview/:id", authMiddleware, async (req, res) => {
 app.get("/interview/history", authMiddleware, async (req, res) => {
   try {
     const { userId } = req.user;
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found!" });
-    }
-    let interviews;
 
-    if (user.role === "interviewer") {
-      interviews = await Interview.find({ interviewerId: userId }) //are they equal if yes then do next line
-        .populate("intervieweeId", "name email")
-        .sort({ scheduledAt: -1 }); //sort by latest first
-    } else {
-      interviews = await Interview.find({ intervieweeId: userId })
-        .populate("interviewerId", "name email skills")
-        .sort({ scheduledAt: -1 });
-    }
-    res.json(interviews);
+    const history = await Interview.find({
+      status: "completed",
+      $or: [{ interviewerId: userId }, { intervieweeId: userId }],
+    })
+      .populate("interviewerId", "name email")
+      .populate("intervieweeId", "name email");
+
+    res
+      .status(200)
+      .json({ message: "Interview history fetched successfully", history });
   } catch (err) {
+    console.log("HISTORY ERROR", err);
     res
       .status(500)
       .json({ message: "Error fetching history", error: err.message });
   }
 });
 
-//interviews request
+//rating
+app.put("/interview/:id/review", authMiddleware, async (req, res) => {
+  try {
+    console.log("NEW REVIEW ROUTE RUNNING");
+    const { id } = req.params;
+    const { userId } = req.user;
+    const { rating, feedback } = req.body;
+
+    const interview = await Interview.findById(id);
+
+    if (!interview) {
+      return res.status(404).json({ message: "Interview not found" });
+    }
+
+    //only interviewee can review
+    if (String(interview.intervieweeId) !== String(userId)) {
+      return res
+        .status(403)
+        .json({ message: "Only interviewee can submit review" });
+    }
+
+    //only completed interviews can be reviewed
+    if (interview.status !== "completed") {
+      return res
+        .status(400)
+        .json({ message: "Only completed interviews can be reviewed" });
+    }
+
+    //prevent duplicate reviews
+    if (interview.rating) {
+      return res.status(400).json({ message: "Review already submitted" });
+    }
+
+    //rating validation
+    if (!rating || rating < 1 || rating > 5) {
+      return res
+        .status(400)
+        .json({ message: "Rating must be between 1 and 5" });
+    }
+
+    interview.rating = rating;
+    interview.feedback = feedback || "";
+    await interview.save();
+
+    const interviewer = await User.findById(interview.interviewerId);
+
+    if (!interviewer) {
+      return res.status(404).json({
+        message: "Interviewer not found",
+      });
+    }
+
+    // console.log("Fetched interviewer:", interviewer.select("-password"));
+
+    const totalScore = interviewer.rating * interviewer.interviewsTaken;
+    const newAvg = (totalScore + rating) / (interviewer.interviewsTaken + 1);
+
+    interviewer.rating = newAvg;
+    interviewer.interviewsTaken += 1;
+
+    await interviewer.save();
+
+    res
+      .status(200)
+      .json({ message: "Review submitted successfully", interview });
+  } catch (err) {
+    console.log("REVIEW ERROR", err);
+
+    res.status(500).json({ message: "Error submitting review" });
+  }
+});
+
+//interviews request user sent
 app.get("/interview/my", authMiddleware, async (req, res) => {
   try {
     const { userId } = req.user;
@@ -317,6 +533,14 @@ app.get("/interview/my", authMiddleware, async (req, res) => {
       .status(500)
       .json({ message: "Unable to get requests", error: err.message });
   }
+});
+
+//authenticating user
+app.get("/me", authMiddleware, (req, res) => {
+  res.status(200).json({
+    message: "Authenticated",
+    user: req.user,
+  });
 });
 
 //role switch
@@ -358,7 +582,43 @@ app.get("/user/me", authMiddleware, async (req, res) => {
   }
 });
 
-//server start
-app.listen(8080, () => {
-  console.log("Server is running on port 8080");
+//http server using express app
+const server = http.createServer(app);
+
+//socket.io server
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+  },
+});
+
+//socket connection listener
+io.on("connection", (socket) => {
+  console.log("New socket connected:", socket.id);
+
+  socket.on("join-room", (interviewId) => {
+    socket.join(interviewId);
+
+    console.log(`${socket.id} joined room ${interviewId}`);
+
+    socket.to(interviewId).emit("user-joined");
+  });
+
+  //offer and answer from one browser to another
+  socket.on("offer", ({ interviewId, offer }) => {
+    socket.to(interviewId).emit("receive-offer", offer);
+  });
+
+  socket.on("answer", ({ interviewId, answer }) => {
+    socket.to(interviewId).emit("receive-answer", answer);
+  });
+
+  socket.on("ice-candidate", ({ interviewId, candidate }) => {
+    socket.to(interviewId).emit("receive-ice-candidate", candidate);
+  });
+});
+
+server.listen(8080, () => {
+  console.log("Server running on port 8080");
 });
