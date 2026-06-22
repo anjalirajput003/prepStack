@@ -45,8 +45,9 @@ const MyRequests = () => {
       ) : (
         requests.map((request) => (
           <div key={request._id}>
-            <p>Interviewer Name: {request.interviewerId.name}</p>
+            <p>Interviewer Name: {request.interviewerId?.name}</p>
             <p>Category: {request.category}</p>
+            <p>Level: {request.level}</p>
             <p>Status: {request.status}</p>
             <p>
               Scheduled At:{" "}

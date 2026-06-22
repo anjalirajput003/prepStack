@@ -47,6 +47,53 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  lastActiveAt: {
+    type: Date,
+    default: Date.now,
+  },
+
+  warningCount: {
+    type: Number,
+    default: 0,
+  },
+
+  isBanned: {
+    type: Boolean,
+    default: false,
+  },
+  profilePicture: {
+    type: String,
+    default: "",
+  },
+
+  bio: {
+    type: String,
+    default: "",
+  },
+
+  experience: {
+    type: Number,
+    default: 0,
+  },
+
+  linkedin: {
+    type: String,
+    default: "",
+  },
+
+  github: {
+    type: String,
+    default: "",
+  },
+
+  currentCompany: {
+    type: String,
+    default: "",
+  },
+  isAvailable: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 const User = mongoose.model("User", userSchema);

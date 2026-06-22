@@ -95,23 +95,23 @@ const ReceivedRequests = () => {
     }
   }
 
-  async function handleComplete(interviewId) {
-    try {
-      await fetchWithAuth(`/interview/${interviewId}/complete`, {
-        method: "PUT",
-      });
+  // async function handleComplete(interviewId) {
+  //   try {
+  //     await fetchWithAuth(`/interview/${interviewId}/complete`, {
+  //       method: "PUT",
+  //     });
 
-      setRequests((prevRequests) =>
-        prevRequests.map((request) =>
-          request._id === interviewId
-            ? { ...request, status: "completed" }
-            : request,
-        ),
-      );
-    } catch (err) {
-      alert(err.message);
-    }
-  }
+  //     setRequests((prevRequests) =>
+  //       prevRequests.map((request) =>
+  //         request._id === interviewId
+  //           ? { ...request, status: "completed" }
+  //           : request,
+  //       ),
+  //     );
+  //   } catch (err) {
+  //     alert(err.message);
+  //   }
+  // }
 
   return (
     <div>
@@ -174,9 +174,19 @@ const ReceivedRequests = () => {
               </div>
             )}
 
-            {request.status === "scheduled" && (
+            {/* {request.status === "scheduled" && (
               <button onClick={() => handleComplete(request._id)}>
                 Mark Completed
+              </button>
+            )} */}
+
+            {request.status === "scheduled" && (
+              <button
+                onClick={() =>
+                  window.open(`/interview-room/${request._id}`, "_blank")
+                }
+              >
+                Join Interview
               </button>
             )}
 
