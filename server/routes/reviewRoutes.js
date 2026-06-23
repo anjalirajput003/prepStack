@@ -10,7 +10,6 @@ const router = express.Router();
 //rating & review
 router.put("/interview/:id/review", authMiddleware, async (req, res) => {
   try {
-    // console.log("NEW REVIEW ROUTE RUNNING");
     const { id } = req.params;
     const { userId } = req.user;
     const { rating, feedback } = req.body;
@@ -58,8 +57,6 @@ router.put("/interview/:id/review", authMiddleware, async (req, res) => {
         message: "Interviewer not found",
       });
     }
-
-    // console.log("Fetched interviewer:", interviewer.select("-password"));
 
     const totalScore = interviewer.rating * interviewer.interviewsTaken;
     const newAvg = (totalScore + rating) / (interviewer.interviewsTaken + 1);

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { fetchWithAuth } from "../api/api";
 import Navbar from "../components/Navbar";
 import { useNavigate } from "react-router-dom";
+import { calculateProfileCompletion } from "../utils/profileCompletion";
+import AvailabilityBadge from "../components/AvailabilityBadge";
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
@@ -42,48 +44,48 @@ const Dashboard = () => {
     }
   }
 
-  function calculateProfileCompletion() {
-    if (!user) return 0;
+  // function calculateProfileCompletion() {
+  //   if (!user) return 0;
 
-    let completed = 0;
-    let total = 0;
+  //   let completed = 0;
+  //   let total = 0;
 
-    const commonFields = [
-      user.name,
-      user.bio,
-      user.linkedin,
-      user.github,
-      user.profilePicture,
-    ];
+  //   const commonFields = [
+  //     user.name,
+  //     user.bio,
+  //     user.linkedin,
+  //     user.github,
+  //     user.profilePicture,
+  //   ];
 
-    total += commonFields.length;
+  //   total += commonFields.length;
 
-    commonFields.forEach((field) => {
-      if (field && field !== "" && field !== null) {
-        completed++;
-      }
-    });
+  //   commonFields.forEach((field) => {
+  //     if (field && field !== "" && field !== null) {
+  //       completed++;
+  //     }
+  //   });
 
-   if (user?.skills?.length > 0) {
-     completed++;
-   }
+  //  if (user?.skills?.length > 0) {
+  //    completed++;
+  //  }
 
-    total++;
+  //   total++;
 
-    if (user.role === "interviewer") {
-      total += 3;
+  //   if (user.role === "interviewer") {
+  //     total += 3;
 
-      if (user.category) completed++;
+  //     if (user.category) completed++;
 
-      if (user.experience > 0) completed++;
+  //     if (user.experience > 0) completed++;
 
-      if (user.currentCompany) completed++;
-    }
+  //     if (user.currentCompany) completed++;
+  //   }
 
-    return Math.round((completed / total) * 100);
-  }
+  //   return Math.round((completed / total) * 100);
+  // }
 
-  // console.log("USER:", user);
+
 
   return (
     <div>
@@ -111,7 +113,7 @@ const Dashboard = () => {
 
       <p>
         Profile Completion:
-        {calculateProfileCompletion()}%
+        {calculateProfileCompletion(user)}%
       </p>
       <div
         style={{
@@ -124,7 +126,7 @@ const Dashboard = () => {
       >
         <div
           style={{
-            width: `${calculateProfileCompletion()}%`,
+            width: `${calculateProfileCompletion(user)}%`,
             height: "100%",
             backgroundColor: "green",
           }}
@@ -146,7 +148,7 @@ const Dashboard = () => {
 
           <p>
             Status:
-            {user?.isAvailable ? " Available 🟢" : " Unavailable 🔴"}
+            <AvailabilityBadge isAvailable={user?.isAvailable} />
           </p>
         </>
       )}

@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { fetchWithAuth } from "../api/api";
 import { useNavigate } from "react-router-dom";
+import { CATEGORIES } from "../constants/appConstants";
+
+const INITIAL_FORM_STATE = {
+  name: "",
+  bio: "",
+  linkedin: "",
+  github: "",
+  skills: "",
+  category: "",
+  experience: 0,
+  currentCompany: "",
+  role: "",
+};
 
 const EditProfile = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    bio: "",
-    linkedin: "",
-    github: "",
-    skills: "",
-    category: "",
-    experience: 0,
-    currentCompany: "",
-    role: "",
-  });
+  const [formData, setFormData] = useState({ INITIAL_FORM_STATE });
   const [isAvailable, setIsAvailable] = useState(true);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -37,7 +40,7 @@ const EditProfile = () => {
           role: data.role || "",
         });
 
-        setIsAvailable(data.isAvailable);
+        setIsAvailable(data.isAvailable ?? true);
       } catch (err) {
         alert(err.message);
       }
@@ -53,6 +56,13 @@ const EditProfile = () => {
     });
   }
 
+  function getSkillsArray() {
+    return formData.skills
+      .split(",")
+      .map((skill) => skill.trim())
+      .filter(Boolean);
+  }
+
   async function handleSave() {
     try {
       await fetchWithAuth("/profile", {
@@ -65,15 +75,13 @@ const EditProfile = () => {
           category: formData.category,
           experience: Number(formData.experience),
           currentCompany: formData.currentCompany,
-          skills: formData.skills
-            .split(",")
-            .map((skill) => skill.trim())
-            .filter(Boolean),
+          skills: getSkillsArray(),
           isAvailable,
         }),
       });
 
       alert("Profile updated successfully");
+      navigate("/profile");
     } catch (err) {
       alert(err.message);
     }
@@ -172,14 +180,6 @@ const EditProfile = () => {
         onChange={handleChange}
       />
 
-      {/* <select
-        value={isAvailable}
-        onChange={(e) => setIsAvailable(e.target.value === "true")}
-      >
-        <option value="true">Available</option>
-        <option value="false">Unavailable</option>
-      </select> */}
-
       <br />
 
       <input
@@ -210,13 +210,11 @@ const EditProfile = () => {
             onChange={handleChange}
           >
             <option value="">Select Category</option>
-            <option value="HR">HR</option>
-            <option value="Tech">Tech</option>
-            <option value="Finance">Finance</option>
-            <option value="Marketing">Marketing</option>
-            <option value="Healthcare">Healthcare</option>
-            <option value="Non-Tech">Non-Tech</option>
-            <option value="Others">Others</option>
+            {CATEGORIES.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
           </select>
 
           <br />
@@ -253,7 +251,6 @@ const EditProfile = () => {
       )}
 
       <button onClick={handleSave}>Save Profile</button>
-      <button onClick={() => navigate("/profile")}>Go to profile</button>
     </div>
   );
 };

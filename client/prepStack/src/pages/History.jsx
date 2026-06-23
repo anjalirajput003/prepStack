@@ -56,8 +56,6 @@ const History = () => {
   }
 
   async function handleRequestAgain(interviewerId, category) {
-    console.log("ID:", interviewerId);
-    console.log("CATEGORY:", category);
   try {
     await fetchWithAuth("/interview", {
       method: "POST",
@@ -84,9 +82,7 @@ const History = () => {
             <p> Interviewer : {interview.interviewerId?.name}</p>
             <p> Interviewee : {interview.intervieweeId?.name}</p>
             <p> Category : {interview.category}</p>
-            {/* <p>Level: {interview.level}</p> */}
             <p> Status: {interview.status} </p>
-            {/* 6a0b0ddd70a0cbfacc66f658 */}
             <p>
               {" "}
               Scheduled At :{" "}
@@ -95,7 +91,6 @@ const History = () => {
                 : "N/A"}
             </p>
             <p>Rating: {String(interview.rating)}</p>
-            {/* <p>ID: {interview._id}</p> */}
             {!interview.rating && (
               <button
                 onClick={() => {
@@ -136,15 +131,7 @@ const History = () => {
                 </button>
               </div>
             )}
-
-            {/* <p>Feedback: {String(interview.feedback)}</p> */}
-            {/* <button
-              onClick={() =>
-                window.open(`/interview-room/${interview._id}`, "_blank")
-              }
-            >
-              Join Interview
-            </button> */}
+            
             <button
               onClick={() =>
                 navigate(`/interviewers/${interview.interviewerId._id}`)

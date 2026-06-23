@@ -4,20 +4,14 @@ const roomIntervals = {};
 
 //socket connection listener
 io.on("connection", (socket) => {
-  // console.log("New socket connected:", socket.id);
 
   socket.on("join-room", (interviewId) => {
     socket.join(interviewId);
     socket.data.interviewId = interviewId;
 
-    console.log(`${socket.id} joined room ${interviewId}`);
-
     const room = io.sockets.adapter.rooms.get(interviewId);
-    console.log("Room members:", [...room]);
 
     const participantsCount = room ? room.size : 0;
-
-    console.log(`Participants in ${interviewId}:`, participantsCount);
 
     if (participantsCount === 2) {
       socket.to(interviewId).emit("user-joined");
@@ -49,7 +43,6 @@ io.on("connection", (socket) => {
 
     const participantsCount = room ? room.size : 0;
 
-    // console.log(`Participants remaining in ${interviewId}:`, participantsCount);
     socket.to(interviewId).emit("participant-disconnected");
 
     if (participantsCount === 0) {

@@ -14,6 +14,7 @@ import Leaderboard from "./pages/Leaderboard";
 import InterviewerProfile from "./pages/InterviewerProfile";
 import EditProfile from "./pages/EditProfile";
 import MyProfile from "./pages/MyProfile";
+import ChangePassword from "./pages/ChangePassword";
 
 function App() {
   return (
@@ -45,14 +46,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* <Route
-          path="/requests"
-          element={
-            <ProtectedRoute>
-              <Requests />
-            </ProtectedRoute>
-          }
-        /> */}
         <Route
           path="/my-requests"
           element={
@@ -106,6 +99,14 @@ function App() {
           element={
             <ProtectedRoute>
               <EditProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/change-password"
+          element={
+            <ProtectedRoute>
+              <ChangePassword />
             </ProtectedRoute>
           }
         />

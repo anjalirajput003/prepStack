@@ -4,8 +4,6 @@ import User from "../models/user.model.js";
 const startInactivityChecker = () => {
   cron.schedule("0 0 * * *", async () => {
     try {
-      console.log("Checking inactive interviewers...");
-
       const interviewers = await User.find({
         role: "interviewer",
         isBanned: false,
@@ -28,7 +26,6 @@ const startInactivityChecker = () => {
         await interviewer.save();
       }
 
-      console.log("Inactive interviewer check completed");
     } catch (err) {
       console.log("INACTIVITY CHECK ERROR:", err);
     }

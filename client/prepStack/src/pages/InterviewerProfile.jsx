@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { fetchWithAuth } from "../api/api";
+import AvailabilityBadge from "../components/AvailabilityBadge";
 
 const InterviewerProfile = () => {
   const { id } = useParams();
@@ -35,10 +36,6 @@ const InterviewerProfile = () => {
   }
 
   async function handleInterviewRequest() {
-    console.log("INTERVIEWER:", interviewer);
-
-    console.log(interviewer._id);
-    console.log(interviewer.category);
     try {
       await fetchWithAuth("/interview", {
         method: "POST",
@@ -74,7 +71,7 @@ const InterviewerProfile = () => {
 
       <p>
         Status:
-        {interviewer.isAvailable ? " Available 🟢" : " Unavailable 🔴"}
+        <AvailabilityBadge isAvailable={interviewer.isAvailable} />
       </p>
 
       <p>
@@ -116,7 +113,9 @@ const InterviewerProfile = () => {
 
       <p>
         Skills:
-        {interviewer.skills.join(", ")}
+        {interviewer?.skills?.length > 0
+          ? interviewer.skills.join(", ")
+          : "No skills added"}
       </p>
 
       <p>
@@ -133,8 +132,8 @@ const InterviewerProfile = () => {
       {reviews.length === 0 ? (
         <p>No reviews yet</p>
       ) : (
-        reviews.map((review, index) => (
-          <div key={index}>
+        reviews.map((review) => (
+          <div key={review._id}>
             <p>Rating: {review.rating}/5</p>
 
             <p>{review.feedback}</p>

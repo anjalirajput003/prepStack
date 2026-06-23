@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchWithAuth } from "../api/api";
 import { useNavigate } from "react-router-dom";
+import AvailabilityBadge from "../components/AvailabilityBadge";
 
 const MyProfile = () => {
   const [user, setUser] = useState(null);
@@ -23,7 +24,11 @@ const MyProfile = () => {
     return <p>Loading profile...</p>;
   }
 
-  {
+  return (
+    <div>
+      <h2>My Profile</h2>
+
+      {
     user.role === "interviewer" &&
       (!user.category || !user.skills || user.skills.length === 0) && (
         <div>
@@ -33,12 +38,8 @@ const MyProfile = () => {
             Complete Profile
           </button>
         </div>
-      );
+      )
   }
-
-  return (
-    <div>
-      <h2>My Profile</h2>
 
       {user.profilePicture ? (
         <img src={user.profilePicture} alt="Profile" width="150" />
@@ -58,11 +59,6 @@ const MyProfile = () => {
         Skills:{" "}
         {user.skills?.length > 0 ? user.skills.join(", ") : "No skills added"}
       </p>
-
-      {/* <p>
-        Status:
-        {user.isAvailable ? " Available 🟢" : " Unavailable 🔴"}
-      </p> */}
 
       <p>
         LinkedIn:{" "}
@@ -113,14 +109,31 @@ const MyProfile = () => {
             {user.interviewsTaken}
           </p>
 
-              <p>
-                Status:
-                {user.isAvailable ? " Available 🟢" : " Unavailable 🔴"}
-              </p>
-            
+          <p>
+            Status:
+             <AvailabilityBadge
+               isAvailable={user.isAvailable}
+               />
+          </p>
         </>
       )}
-      <button onClick={() => navigate("/edit-profile")}>Edit Profile</button>
+      <div>
+  <button
+    onClick={() =>
+      navigate("/edit-profile")
+    }
+  >
+    Edit Profile
+  </button>
+
+  <button
+    onClick={() =>
+      navigate("/change-password")
+    }
+  >
+    Change Password
+  </button>
+</div>
     </div>
   );
 };

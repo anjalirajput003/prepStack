@@ -25,7 +25,6 @@ const Login = () => {
 
       //store token sent by backend
       localStorage.setItem("token", data.token);
-      console.log("token: ", data.token);
       navigate("/dashboard");
     } catch (err) {
       console.log(err);

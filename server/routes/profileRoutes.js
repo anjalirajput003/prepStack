@@ -5,6 +5,7 @@ import authMiddleware from "../middleware/authMiddleware.js";
 
 import upload from "../middleware/uploadMiddleware.js";
 import cloudinary from "../config/cloudinary.js";
+import bcrypt from "bcrypt";
 
 const router = express.Router();
 
@@ -170,6 +171,46 @@ router.put("/user/switch-role", authMiddleware, async (req, res) => {
     res
       .status(500)
       .json({ message: "Error switching role", error: err.message });
+  }
+});
+
+//change password
+router.put("/change-password", authMiddleware, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    const { userId } = req.user;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Current password is incorrect",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Password changed successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Error changing password",
+      error: err.message,
+    });
   }
 });
 

@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { io } from "socket.io-client";
-import { Editor } from "@monaco-editor/react";
-import LanguageSelector from "../components/LanguageSelector";
+import VideoSection from "../components/interviewRoom/VideoSection";
+import ChatSection from "../components/interviewRoom/ChatSection";
+import CodeEditorSection from "../components/interviewRoom/CodeEditorSection";
+import InterviewControls from "../components/interviewRoom/InterviewControls";
 
 const socket = io("http://localhost:8080");
 
@@ -34,55 +36,39 @@ const InterviewRoom = () => {
     socket.on("user-joined", async () => {
       setStatus("Other participant joined!");
       setConnectionStatus("Connected");
-      // console.log("USER JOINED EVENT");
-
-      // console.log("CREATING OFFER");
 
       const offer = await peerConnectionRef.current.createOffer();
-
-      // console.log("OFFER CREATED");
-
       await peerConnectionRef.current.setLocalDescription(offer);
 
       socket.emit("offer", {
         interviewId,
         offer,
       });
-      console.log("OFFER SENT");
     });
 
     socket.on("receive-offer", async (offer) => {
       setStatus("Incoming connection...");
-      console.log("OFFER RECEIVED");
 
       await peerConnectionRef.current.setRemoteDescription(offer);
-      console.log("REMOTE DESCRIPTION SET");
 
       const answer = await peerConnectionRef.current.createAnswer();
-      console.log("ANSWER CREATED");
 
       await peerConnectionRef.current.setLocalDescription(answer);
       setStatus("Connection established!");
-      console.log("LOCAL DESCRIPTION SET");
 
       socket.emit("answer", {
         interviewId,
         answer,
       });
-      console.log("ANSWER SENT");
     });
 
     socket.on("receive-answer", async (answer) => {
-      console.log("ANSWER RECEIVED");
       await peerConnectionRef.current.setRemoteDescription(answer);
-      console.log("CONNECTION ESTABLISHED");
 
       setStatus("Connection established!");
     });
 
-    console.log("REGISTERING MESSAGE LISTENER");
     socket.on("receive-ice-candidate", async (candidate) => {
-      console.log("ICE CANDIDATE RECEIVED");
       try {
         await peerConnectionRef.current.addIceCandidate(candidate);
       } catch (err) {
@@ -90,7 +76,6 @@ const InterviewRoom = () => {
       }
     });
     socket.on("receive-message", (message) => {
-      // console.log("MESSAGE LISTENER FIRED", message);
       setMessages((prev) => [
         ...prev,
         {
@@ -139,6 +124,7 @@ const InterviewRoom = () => {
       socket.off("interview-ended");
     };
   }, [interviewId]);
+
   useEffect(() => {
     async function startMedia() {
       try {
@@ -164,7 +150,6 @@ const InterviewRoom = () => {
         peerConnectionRef.current = peer;
         peer.onicecandidate = (event) => {
           if (event.candidate) {
-            console.log("ICE CANDIDATE GENERATED");
 
             socket.emit("ice-candidate", {
               interviewId,
@@ -172,7 +157,6 @@ const InterviewRoom = () => {
             });
           }
         };
-        console.log("PEER CONNECTION CREATED");
         socket.emit("join-room", interviewId);
 
         stream.getTracks().forEach((track) => {
@@ -180,7 +164,6 @@ const InterviewRoom = () => {
         });
 
         peer.ontrack = (event) => {
-          console.log("REMOTE TRACK RECEIVED");
 
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = event.streams[0];
@@ -208,7 +191,6 @@ const InterviewRoom = () => {
   }, []);
 
   function handleSendMessage() {
-    console.log("SEND BUTTON CLICKED");
     if (!messageInput.trim()) return;
 
     socket.emit("send-message", {
@@ -254,7 +236,6 @@ const InterviewRoom = () => {
 
       const screenTrack = screenStream.getVideoTracks()[0];
       screenTrack.onended = async () => {
-        console.log("SCREEN SHARE ENDED");
 
         const cameraTrack = localStreamRef.current?.getVideoTracks()[0];
 
@@ -328,7 +309,6 @@ const InterviewRoom = () => {
     try {
       setIsExecuting(true);
       setOutput("Running...");
-      console.log(selectedLanguage);
       const response = await fetch("http://localhost:8080/execute", {
         method: "POST",
         headers: {
@@ -442,63 +422,38 @@ const InterviewRoom = () => {
       {interviewEnded && <h2>Interview Ended</h2>}
       <p>Interview ID: {interviewId}</p>
       <p>Status: {status}</p>
-      <h3>Your Camera Preview</h3>
-      <video
-        ref={localVideoRef}
-        autoPlay
-        playsInline
-        muted
-        width="400"
-        height="300"
+      <VideoSection
+        localVideoRef={localVideoRef}
+        remoteVideoRef={remoteVideoRef}
       />
-      <h3>Remote Participant</h3>
-      <video
-        ref={remoteVideoRef}
-        autoPlay
-        playsInline
-        width="400"
-        height="300"
+      <ChatSection
+        messages={messages}
+        messageInput={messageInput}
+        setMessageInput={setMessageInput}
+        handleSendMessage={handleSendMessage}
       />
-      <h3>Chat</h3>
-      <div>
-        {messages.map((msg, index) => (
-          <p key={index}>
-            <strong>{msg.sender}:</strong> {msg.text}
-          </p>
-        ))}
-      </div>
-      <input
-        type="text"
-        value={messageInput}
-        onChange={(e) => setMessageInput(e.target.value)}
-        placeholder="Type message..."
-      />
-      <LanguageSelector
+      <CodeEditorSection
         selectedLanguage={selectedLanguage}
-        onLanguageChange={setSelectedLanguage}
+        setSelectedLanguage={setSelectedLanguage}
+        code={code}
+        handleCodeChange={handleCodeChange}
+        output={output}
+        handleRunCode={handleRunCode}
+        isExecuting={isExecuting}
       />
-      {/* <p>Selected Language: {selectedLanguage}</p> */}
-      <Editor
-        key={selectedLanguage}
-        height="600px"
-        language={selectedLanguage}
-        theme="vs-dark"
-        value={code}
-        onChange={handleCodeChange}
+
+      <InterviewControls
+        isMuted={isMuted}
+        toggleMute={toggleMute}
+        isCameraOff={isCameraOff}
+        toggleCamera={toggleCamera}
+        isSharingScreen={isSharingScreen}
+        shareScreen={shareScreen}
+        stopScreenShare={stopScreenShare}
+        handleEndInterview={handleEndInterview}
       />
-      <h3>Output</h3>
-      <div
-        style={{
-          border: "1px solid gray",
-          minHeight: "150px",
-          padding: "10px",
-          whiteSpace: "pre-wrap",
-        }}
-      >
-        {output || "No output yet"}
-      </div>
-      <button onClick={handleSendMessage}>Send</button> <br />
-      <button onClick={toggleMute}>{isMuted ? "Unmute" : "Mute"}</button> <br />
+
+      {/* <button onClick={toggleMute}>{isMuted ? "Unmute" : "Mute"}</button> <br />
       <button onClick={toggleCamera}>
         {isCameraOff ? "Turn Camera On" : "Turn Camera Off"}
       </button>{" "}
@@ -507,13 +462,7 @@ const InterviewRoom = () => {
         {isSharingScreen ? "Stop sharing" : "Share screen"}{" "}
       </button>
       <br />
-      <button onClick={handleRunCode} disabled={isExecuting}>
-        {isExecuting ? "Running..." : "Run Code"}
-      </button>
-      <button onClick={handleEndInterview}>End Interview</button>
-      {/*<button onClick={() => setOutput("Hello from output console")}>
-        Test Output
-      </button>*/}
+      <button onClick={handleEndInterview}>End Interview</button> */}
     </div>
   );
 };

@@ -74,16 +74,11 @@ router.get("/interview/received", authMiddleware, async (req, res) => {
 
 //interview status update -> accept, reject
 router.put("/interview/:id", authMiddleware, async (req, res) => {
-  console.log("PUT ROUTE HIT");
 
   try {
     const { id } = req.params;
     const { status } = req.body;
     const { userId } = req.user;
-
-    // console.log("Request ID:", id);
-    // console.log("Status:", status);
-    // console.log("Logged in user:", userId);
 
     const allowed = ["accepted", "rejected"];
 
@@ -95,16 +90,11 @@ router.put("/interview/:id", authMiddleware, async (req, res) => {
 
     const interview = await Interview.findById(id);
 
-    console.log("Interview found:", interview);
-
     if (!interview) {
       return res.status(404).json({
         message: "Interview request not found",
       });
     }
-
-    // console.log("Interviewer ID:", interview.interviewerId);
-    // console.log("Type:", typeof interview.interviewerId);
 
     if (String(interview.interviewerId) !== String(userId)) {
       return res.status(403).json({
@@ -252,9 +242,6 @@ router.put("/interview/:id/complete", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Interview not found" });
     }
 
-    // console.log("INTERVIEWER ID:", String(interview.interviewerId));
-
-    // console.log("LOGGED USER:", String(userId));
     //only interviewer can complete
     if (String(interview.interviewerId) !== String(userId)) {
       return res
@@ -316,7 +303,6 @@ router.get("/interview/my", authMiddleware, async (req, res) => {
     res
       .status(200)
       .json({ message: "Interview requests fetched Successfully", requests });
-    console.log(requests);
   } catch (err) {
     res
       .status(500)

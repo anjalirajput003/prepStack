@@ -11,12 +11,6 @@ router.post("/execute", async (req, res) => {
   try {
     const { sourceCode, language } = req.body;
 
-    // console.log("SOURCE CODE:");
-    // console.log(sourceCode);
-
-    // console.log("LANGUAGE:");
-    // console.log(language);
-
     sandbox = await Sandbox.create({
       apiKey: process.env.E2B_API_KEY,
     });
@@ -25,8 +19,6 @@ router.post("/execute", async (req, res) => {
     const execution = await sandbox.runCode(sourceCode, {
       language,
     });
-
-    console.log("EXECUTION RESULT:", JSON.stringify(execution, null, 2));
 
     const stdout = execution.logs?.stdout?.join("") || "";
 

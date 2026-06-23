@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { CATEGORIES } from "../constants/appConstants";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -9,8 +10,7 @@ const Signup = () => {
     email: "",
     password: "",
     role: "interviewee",
-    category: "Tech",
-    skills: "",
+    category: "",
   });
 
   function handleChange(e) {
@@ -33,7 +33,7 @@ const Signup = () => {
           password: formData.password,
           role: formData.role,
           category: formData.category,
-          skills: formData.skills.split(",").map((skill) => skill.trim()),
+          // skills: formData.skills.split(",").map((skill) => skill.trim()),
         }),
       });
 
@@ -88,7 +88,16 @@ const Signup = () => {
 
       <br />
 
-      <select name="role" value={formData.role} onChange={handleChange}>
+      <select
+        value={formData.role}
+        onChange={(e) =>
+          setFormData({
+            ...formData,
+            role: e.target.value,
+            category: "",
+          })
+        }
+      >
         <option value="interviewee">Interviewee</option>
 
         <option value="interviewer">Interviewer</option>
@@ -96,27 +105,25 @@ const Signup = () => {
 
       <br />
 
-      {/* <select name="category" value={formData.category} onChange={handleChange}>
-        <option value="HR">HR</option>
-        <option value="Tech">Tech</option>
-        <option value="Finance">Finance</option>
-        <option value="Marketing">Marketing</option>
-        <option value="Healthcare">Healthcare</option>
-        <option value="Non-Tech">Non-Tech</option>
-        <option value="Others">Others</option>
-      </select> */}
+      {formData.role === "interviewer" && (
+        <select
+          value={formData.category}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              category: e.target.value,
+            })
+          }
+        >
+          <option value="">Select Category</option>
 
-      <br />
-
-      {/* <input
-        type="text"
-        name="skills"
-        placeholder="React, Node, MongoDB"
-        value={formData.skills}
-        onChange={handleChange}
-      /> */}
-
-      <br />
+          {CATEGORIES.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+      )}
 
       <button onClick={handleSignup}>Signup</button>
     </div>

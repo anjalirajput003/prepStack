@@ -95,24 +95,6 @@ const ReceivedRequests = () => {
     }
   }
 
-  // async function handleComplete(interviewId) {
-  //   try {
-  //     await fetchWithAuth(`/interview/${interviewId}/complete`, {
-  //       method: "PUT",
-  //     });
-
-  //     setRequests((prevRequests) =>
-  //       prevRequests.map((request) =>
-  //         request._id === interviewId
-  //           ? { ...request, status: "completed" }
-  //           : request,
-  //       ),
-  //     );
-  //   } catch (err) {
-  //     alert(err.message);
-  //   }
-  // }
-
   return (
     <div>
       <h2>Received Interview Requests</h2>
@@ -174,11 +156,6 @@ const ReceivedRequests = () => {
               </div>
             )}
 
-            {/* {request.status === "scheduled" && (
-              <button onClick={() => handleComplete(request._id)}>
-                Mark Completed
-              </button>
-            )} */}
 
             {request.status === "scheduled" && (
               <button

@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { fetchWithAuth } from "../api/api";
 import { useNavigate } from "react-router-dom";
+import AvailabilityBadge from "../components/AvailabilityBadge";
+import { LEVELS } from "../constants/appConstants";
+import { CATEGORIES } from "../constants/appConstants";
 
 const InterviewersList = () => {
   const [interviewers, setInterviewers] = useState([]);
@@ -27,7 +30,6 @@ const InterviewersList = () => {
         }),
       });
       setRequestSent((prev) => [...prev, interviewerId]);
-      console.log("Request sent: ", data);
     } catch (err) {
       console.log(err.message);
     }
@@ -62,16 +64,6 @@ const InterviewersList = () => {
   }
 
   useEffect(() => {
-    // async function getInterviewers() {
-    //   try {
-    //     const data = await fetchWithAuth("/interviewers");
-    //     setInterviewers(data);
-    //   } catch (err) {
-    //     console.log(err.message);
-    //   }
-    // }
-    // getInterviewers();
-
     async function getMyRequests() {
       try {
         const data = await fetchWithAuth("/interview/my");
@@ -86,7 +78,6 @@ const InterviewersList = () => {
     }
     getMyRequests();
   }, []);
-  console.log(requestSent);
 
   return (
     <div>
@@ -96,37 +87,30 @@ const InterviewersList = () => {
           onChange={(e) => setSelectedCategory(e.target.value)}
         >
           <option value="">Select Category</option>
-
-          <option value="HR">HR</option>
-
-          <option value="Tech">Tech</option>
-
-          <option value="Finance">Finance</option>
-
-          <option value="Marketing">Marketing</option>
-
-          <option value="Healthcare">Healthcare</option>
-
-          <option value="Non-Tech">Non-Tech</option>
-
-          <option value="Others">Others</option>
+          {CATEGORIES.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
         </select>
 
         <select
           value={selectedLevel}
           onChange={(e) => setSelectedLevel(e.target.value)}
         >
-          <option value="">Select Level</option>
-
-          <option value="Beginner">Beginner</option>
-
-          <option value="Intermediate">Intermediate</option>
-
-          <option value="Pro">Pro</option>
+        <option value="">Select level</option>
+          {LEVELS.map((level) => (
+            <option key={level} value={level}>
+              {level}
+            </option>
+          ))}
         </select>
       </div>
+
       <h2>InterviewersList</h2>
+
       <button onClick={getInterviewers}>Search Interviewers</button>
+
       {interviewers.map((interviewer) => (
         <div key={interviewer._id}>
           {interviewer.profilePicture && (
@@ -137,15 +121,20 @@ const InterviewersList = () => {
               height="80"
             />
           )}
-          {console.log(interviewer)}
+
           <p>Name: {interviewer.name} </p>
           <p>
             Status:
-            {interviewer.isAvailable ? " Available 🟢" : " Unavailable 🔴"}
+            <AvailabilityBadge isAvailable={interviewer.isAvailable} />
           </p>
           <p>Category: {interviewer.category} </p>
           <p>Level: {getInterviewerLevel(interviewer)}</p>
-          <p>Skills: {interviewer.skills.join(", ")} </p>
+          <p>
+            Skills:
+            {interviewer?.skills?.length > 0
+              ? interviewer.skills.join(", ")
+              : "No skills added"}
+          </p>
           {interviewer.isAvailable ? (
             <button
               onClick={() => handleInterviewRequest(interviewer._id)}
