@@ -1,30 +1,57 @@
 import React, { useEffect, useState } from "react";
 import { fetchWithAuth } from "../api/api";
-import Navbar from "../components/Navbar";
 import { useNavigate } from "react-router-dom";
-import { calculateProfileCompletion } from "../utils/profileCompletion";
-import AvailabilityBadge from "../components/AvailabilityBadge";
+import DashboardLayout from "../layouts/DashboardLayout";
+import HeroSection from "../components/dashboard/HeroSection";
+import TopStats from "../components/dashboard/TopStats";
+import DashboardContainer from "../components/dashboard/DashboardContainer";
+import SecondRow from "../components/dashboard/SecondRow";
+import ThirdRow from "../components/dashboard/ThirdRow";
+import SwitchRoleBanner from "../components/dashboard/SwitchRoleBanner";
+import { useToast } from "../context/ToastContext";
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [historyCount, setHistoryCount] = useState(0);
+
+  // 1. Add state variables for the dynamic counts
+  const [pendingCount, setPendingCount] = useState(0);
+  const [upcomingCount, setUpcomingCount] = useState(0);
+
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   useEffect(() => {
-    async function getUser() {
+    async function getDashboardData() {
       try {
-        const data = await fetchWithAuth("/profile");
-        setUser(data);
+        // Fetch User Profile
+        const profileData = await fetchWithAuth("/profile");
+        setUser(profileData);
 
+        // Fetch History Count
         const historyData = await fetchWithAuth("/interview/history");
+        setHistoryCount(historyData?.history?.length || 0);
 
-        setHistoryCount(historyData?.interviews?.length);
+        // Fetch Interviewee Stats (Sent Requests)
+        const myRequestsData = await fetchWithAuth("/interview/my");
+        const upcoming =
+          myRequestsData?.requests?.filter(
+            (req) => req.status === "accepted" || req.status === "scheduled",
+          ).length || 0;
+        setUpcomingCount(upcoming);
+
+        // Fetch Interviewer Stats (Received Requests)
+        const receivedRequestsData = await fetchWithAuth("/interview/received");
+        const pending =
+          receivedRequestsData?.requests?.filter(
+            (req) => req.status === "pending",
+          ).length || 0;
+        setPendingCount(pending);
       } catch (err) {
         console.log(err.message);
       }
     }
-
-    getUser();
+    getDashboardData();
   }, []);
 
   async function handleRoleSwitch() {
@@ -38,155 +65,61 @@ const Dashboard = () => {
         role: data.role,
       }));
 
-      alert(`Role changed to ${data.role}`);
+      // Replaced native alert with your toast system
+      showToast(`Role changed to ${data.role}`, "success");
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, "error");
     }
   }
 
-  // function calculateProfileCompletion() {
-  //   if (!user) return 0;
+  async function handleAvailabilityToggle() {
+    try {
+      const data = await fetchWithAuth("/profile/availability", {
+        method: "PUT",
+      });
 
-  //   let completed = 0;
-  //   let total = 0;
+      // Update the user state so the UI changes instantly
+      setUser((prev) => ({
+        ...prev,
+        isAvailable: data.isAvailable,
+      }));
 
-  //   const commonFields = [
-  //     user.name,
-  //     user.bio,
-  //     user.linkedin,
-  //     user.github,
-  //     user.profilePicture,
-  //   ];
-
-  //   total += commonFields.length;
-
-  //   commonFields.forEach((field) => {
-  //     if (field && field !== "" && field !== null) {
-  //       completed++;
-  //     }
-  //   });
-
-  //  if (user?.skills?.length > 0) {
-  //    completed++;
-  //  }
-
-  //   total++;
-
-  //   if (user.role === "interviewer") {
-  //     total += 3;
-
-  //     if (user.category) completed++;
-
-  //     if (user.experience > 0) completed++;
-
-  //     if (user.currentCompany) completed++;
-  //   }
-
-  //   return Math.round((completed / total) * 100);
-  // }
-
-
+      showToast(
+        `Status set to ${data.isAvailable ? "Available" : "Unavailable"}`,
+        "success",
+      );
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  }
 
   return (
-    <div>
-      <Navbar />
-      <h1>Dashboard</h1>
-      {user?.profilePicture && (
-        <img
-          src={user.profilePicture}
-          alt="Profile"
-          width="120"
-          height="120"
-          style={{
-            borderRadius: "50%",
-            objectFit: "cover",
-          }}
+    <DashboardLayout>
+      <DashboardContainer>
+        <HeroSection user={user}>
+          <TopStats
+            user={user}
+            historyCount={historyCount}
+            pendingRequestsCount={pendingCount}
+            upcomingInterviewsCount={upcomingCount}
+          />
+        </HeroSection>
+
+        <SecondRow user={user} />
+
+        <ThirdRow
+          user={user}
+          historyCount={historyCount}
+          onToggleAvailability={handleAvailabilityToggle}
         />
-      )}
-      <h2>Welcome {user?.name}</h2>
 
-      <p>
-        Current Role: <strong>{user?.role}</strong>
-      </p>
-
-      <p>Email: {user?.email}</p>
-
-      <p>
-        Profile Completion:
-        {calculateProfileCompletion(user)}%
-      </p>
-      <div
-        style={{
-          width: "300px",
-          height: "20px",
-          border: "1px solid black",
-          borderRadius: "10px",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            width: `${calculateProfileCompletion(user)}%`,
-            height: "100%",
-            backgroundColor: "green",
-          }}
+        {/* Added Switch Role Banner at the bottom of the container */}
+        <SwitchRoleBanner
+          handleRoleSwitch={handleRoleSwitch}
+          currentRole={user?.role}
         />
-      </div>
-
-      <hr />
-
-      <h3>My Stats</h3>
-
-      {user?.role === "interviewer" && (
-        <>
-          <p>Interviews Taken: {user?.interviewsTaken || 0}</p>
-
-          <p>
-            Rating:
-            {user?.rating > 0 ? user.rating.toFixed(2) : " No Ratings Yet"}
-          </p>
-
-          <p>
-            Status:
-            <AvailabilityBadge isAvailable={user?.isAvailable} />
-          </p>
-        </>
-      )}
-
-      {user?.role === "interviewee" && (
-        <>
-          <p>Completed Interviews: {historyCount}</p>
-        </>
-      )}
-
-      {user?.role === "interviewer" && user?.skills?.length === 0 && (
-        <p>Please complete your interviewer profile.</p>
-      )}
-      <h3>Profile</h3>
-      <button onClick={() => navigate("/profile")}>My Profile</button>
-      <hr />
-      <h3>Interview Management</h3>
-      {user?.role === "interviewee" && (
-        <>
-          <button onClick={() => navigate("/interviewers-list")}>
-            Browse Interviewers
-          </button>
-
-          <button onClick={() => navigate("/my-requests")}>My Requests</button>
-        </>
-      )}
-
-      {user?.role === "interviewer" && (
-        <button onClick={() => navigate("/received-requests")}>
-          Received Requests
-        </button>
-      )}
-      <button onClick={() => navigate("/history")}>Interview History</button>
-      <hr />
-      <h3>Community</h3>
-      <button onClick={() => navigate("/leaderboard")}>Leaderboard</button>
-      <button onClick={handleRoleSwitch}>Switch Role</button>
-    </div>
+      </DashboardContainer>
+    </DashboardLayout>
   );
 };
 

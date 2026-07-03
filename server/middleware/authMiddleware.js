@@ -1,23 +1,69 @@
+// import jwt from "jsonwebtoken";
+// import dotenv from "dotenv";
+
+// dotenv.config();
+
+// const authMiddleware = async (req, res, next) => {
+//   try {
+//     // Read the token directly from the cookie
+//     const token = req.cookies.token;
+
+//     if (!token) {
+//       return res
+//         .status(401)
+//         .json({ message: "Unauthorized, no token provided" });
+//     }
+
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     req.user = decoded; 
+
+//     next();
+//   } catch (error) {
+//     res.status(401).json({ message: "Unauthorized, invalid token" });
+//   }
+// };
+
+// export default authMiddleware;
+
+
+
+
+
+
+
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
+import User from "../models/user.model.js"; // <-- Make sure to import your User model!
 
-dotenv.config();
-
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.status(401).json({ message: "no token provided" });
-    }
-    const token = authHeader.split(" ")[1];
+    const token = req.cookies.token;
 
-    const userVerified = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = userVerified;
+    if (!token) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized, no token provided" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Fetch the user from the database
+    const currentUser = await User.findById(decoded.userId);
+
+    if (!currentUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    // Build a rich req.user object for all your routes to use
+    req.user = {
+      userId: currentUser._id, // For routes using const { userId } = req.user
+      _id: currentUser._id, // For routes using req.user._id
+      name: currentUser.name, // <-- THIS FIXES THE 'UNDEFINED' NOTIFICATIONS!
+      email: currentUser.email,
+    };
 
     next();
-  } catch (err) {
-    console.log("JWT ERROR: ", err);
-    return res.status(401).json({ message: "Invalid token" });
+  } catch (error) {
+    res.status(401).json({ message: "Unauthorized, invalid token" });
   }
 };
 

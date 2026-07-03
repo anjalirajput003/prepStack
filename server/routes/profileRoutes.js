@@ -108,6 +108,96 @@ router.post(
   },
 );
 
+router.put("/profile/edit", authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.user;
+
+    // Extract all the possible text fields from the request body
+    const {
+      name,
+      bio,
+      linkedin,
+      github,
+      category,
+      experience,
+      currentCompany,
+      skills,
+    } = req.body;
+
+    // Build the update object dynamically
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (bio !== undefined) updateData.bio = bio;
+    if (linkedin !== undefined) updateData.linkedin = linkedin;
+    if (github !== undefined) updateData.github = github;
+
+    // Interviewer specific fields
+    if (category) updateData.category = category;
+    if (experience !== undefined) updateData.experience = experience;
+    if (currentCompany !== undefined)
+      updateData.currentCompany = currentCompany;
+    if (skills) updateData.skills = skills; // Expecting the array we sent from the frontend
+
+    const user = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+    }).select("-password");
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user,
+    });
+  } catch (err) {
+    console.error("EDIT PROFILE ERROR:", err);
+    res.status(500).json({
+      message: "Error updating profile details",
+    });
+  }
+});
+
+//change-password
+router.put(
+  "/profile/change-password",
+  authMiddleware, // Your existing authentication middleware
+  async (req, res) => {
+    try {
+      const { userId } = req.user;
+      const { currentPassword, newPassword } = req.body;
+
+      // 1. Fetch the user from the database
+      // We explicitly select the password field in case your model excludes it by default
+      const user = await User.findById(userId).select("+password");
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // 2. Verify the current password matches what is in the database
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+
+      if (!isMatch) {
+        return res.status(400).json({ message: "Incorrect current password" });
+      }
+
+      // 3. Hash the new password for security
+      const salt = await bcrypt.genSalt(10);
+      const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+
+      // 4. Save the new hashed password to the user document
+      user.password = hashedNewPassword;
+      await user.save();
+
+      res.status(200).json({
+        message: "Password updated successfully!",
+      });
+    } catch (err) {
+      console.error("CHANGE PASSWORD ERROR:", err);
+      res.status(500).json({
+        message: "An error occurred while changing your password",
+      });
+    }
+  },
+);
+
 //get list of interviewers based on category
 router.get("/interviewers", authMiddleware, async (req, res) => {
   // const { role } = req.params;
@@ -211,6 +301,50 @@ router.put("/change-password", authMiddleware, async (req, res) => {
       message: "Error changing password",
       error: err.message,
     });
+  }
+});
+
+// Toggle Availability
+router.put("/profile/availability", authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
+    }
+
+    // Flip the current status
+    user.isAvailable = !user.isAvailable;
+    await user.save();
+
+    res.json({ 
+      message: "Availability updated", 
+      isAvailable: user.isAvailable 
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error toggling availability", error: err.message });
+  }
+});
+
+// Search All Users Route
+router.get("/users/search", authMiddleware, async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query) {
+      return res.json([]);
+    }
+
+    // Search for users where the name matches the query (case-insensitive)
+    const users = await User.find({
+      name: { $regex: query, $options: "i" }
+    })
+      .select("name profilePicture role") // Only grab what we need for the UI
+      .limit(8); // Limit to top 8 results so the dropdown doesn't get huge
+
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: "Search failed", error: err.message });
   }
 });
 

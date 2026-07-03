@@ -11,7 +11,7 @@ router.post("/execute", async (req, res) => {
   try {
     const { sourceCode, language } = req.body;
 
-    sandbox = await Sandbox.create({
+    sandbox = await Sandbox.create({ 
       apiKey: process.env.E2B_API_KEY,
     });
 

@@ -1,0 +1,55 @@
+*{
+
+transition:
+
+background .25s,
+
+border .25s,
+
+color .25s,
+
+transform .25s,
+
+width .35s ease,
+
+opacity .35s ease;
+
+}
+
+.sidebar-open{
+
+width:260px;
+
+}
+
+.sidebar-close{
+
+width:86px;
+
+}
+
+.fade-in{
+
+animation:fade .35s ease;
+
+}
+
+@keyframes fade{
+
+from{
+
+opacity:0;
+
+transform:translateY(10px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:none;
+
+}
+
+}

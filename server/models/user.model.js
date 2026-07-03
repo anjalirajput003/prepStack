@@ -28,20 +28,20 @@ const userSchema = new mongoose.Schema({
     default: [],
   },
   category: {
-  type: String,
-  enum: [
-    "",
-    "HR",
-    "Tech",
-    "Finance",
-    "Marketing",
-    "Healthcare",
-    "Non-Tech",
-    "Others",
-  ],
-  default: "",
-  required: false,  
-},
+    type: String,
+    enum: [
+      "",
+      "HR",
+      "Tech",
+      "Finance",
+      "Marketing",
+      "Healthcare",
+      "Non-Tech",
+      "Others",
+    ],
+    default: "",
+    required: false,
+  },
   rating: {
     type: Number,
     default: 0,
@@ -96,6 +96,13 @@ const userSchema = new mongoose.Schema({
   isAvailable: {
     type: Boolean,
     default: true,
+  },
+
+  resetPasswordToken: {
+    type: String,
+  },
+  resetPasswordExpires: {
+    type: Date,
   },
 });
 

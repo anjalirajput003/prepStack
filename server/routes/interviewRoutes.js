@@ -2,18 +2,21 @@ import express from "express";
 
 import Interview from "../models/interview.model.js";
 import User from "../models/user.model.js";
+import Notification from "../models/notification.model.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
 import updateLastActive from "../utils/updateLastActive.js";
+import createNotification from "../utils/createNotification.js";
 
 const router = express.Router();
 
-//interview request
+// interview request
 router.post("/interview", authMiddleware, async (req, res) => {
   try {
     const { userId } = req.user;
     const intervieweeId = userId;
     const { interviewerId, category } = req.body;
+
     if (!interviewerId || !category) {
       return res.status(400).json({ message: "Missing fields" });
     }
@@ -23,23 +26,40 @@ router.post("/interview", authMiddleware, async (req, res) => {
       intervieweeId,
       status: "pending",
     });
+
     if (interviewExists) {
       return res.status(409).json({
         message: "Interview request already sent",
       });
     }
+
     if (interviewerId === intervieweeId) {
       return res
         .status(400)
         .json({ message: "Cannot send request to yourself" });
     }
 
+    // 1. Create the interview
     const interview = await Interview.create({
       interviewerId,
       intervieweeId,
       category,
       status: "pending",
     });
+
+    // 2. Fetch the sender's details so we can use their name in the notification
+    const sender = await User.findById(userId);
+
+    // 3. Create the Notification for the Interviewer
+    await createNotification(req.app.get("io"), {
+      recipient: interviewerId, // The person receiving the request
+      sender: req.user._id, // The person asking
+      type: "request",
+      title: "New Interview Request",
+      message: `${req.user.name} has requested a ${category} interview with you.`,
+      link: "/received-requests",
+    });
+
     res.status(201).json({ message: "Interview request sent", interview });
   } catch (err) {
     console.log("FULL INTERVIEW ERROR:", err);
@@ -74,7 +94,6 @@ router.get("/interview/received", authMiddleware, async (req, res) => {
 
 //interview status update -> accept, reject
 router.put("/interview/:id", authMiddleware, async (req, res) => {
-
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -113,6 +132,14 @@ router.put("/interview/:id", authMiddleware, async (req, res) => {
 
     await interview.save();
 
+    await createNotification(req.app.get("io"), {
+      recipient: interview.intervieweeId,
+      sender: req.user._id,
+      type: status === "accepted" ? "request" : "alert",
+      title: `Interview ${status === "accepted" ? "Accepted" : "Declined"}`,
+      message: `${req.user.name} has ${status} your interview request.`,
+      link: "/my-requests",
+    });
     res.status(200).json({
       message: "Updated successfully",
       interview,
@@ -174,6 +201,15 @@ router.put("/interview/:id/schedule", authMiddleware, async (req, res) => {
 
     await interview.save();
 
+    await createNotification(req.app.get("io"), {
+      recipient: interview.intervieweeId,
+      sender: req.user._id,
+      type: "request",
+      title: "Interview Scheduled",
+      message: `Your interview with ${req.user.name} has been scheduled for ${new Date(scheduledAt).toLocaleString()}.`,
+      link: "/my-requests",
+    });
+
     res
       .status(200)
       .json({ message: "Interview schleduled successfully", interview });
@@ -191,7 +227,6 @@ router.put("/interview/:id/cancel", authMiddleware, async (req, res) => {
     const { id } = req.params;
     const { userId } = req.user;
     const interview = await Interview.findById(id);
-
     if (!interview) {
       return res.status(404).json({ message: "Interview not found" });
     }
@@ -199,6 +234,9 @@ router.put("/interview/:id/cancel", authMiddleware, async (req, res) => {
     //checking whether the cancellation request is made by interviewer or interviewee because only these people can request cancellation
     const isInterviewer = String(interview.interviewerId) === String(userId);
     const isInterviewee = String(interview.intervieweeId) === String(userId);
+    const recipientId = isInterviewer
+      ? interview.intervieweeId
+      : interview.interviewerId;
 
     if (!isInterviewer && !isInterviewee) {
       return res
@@ -218,6 +256,15 @@ router.put("/interview/:id/cancel", authMiddleware, async (req, res) => {
 
     interview.status = "cancelled";
     await interview.save();
+
+    await createNotification(req.app.get("io"), {
+      recipient: recipientId,
+      sender: req.user._id,
+      type: "alert",
+      title: "Interview Cancelled",
+      message: `${req.user.name} has cancelled the upcoming interview.`,
+      link: isInterviewer ? "/my-requests" : "/received-requests",
+    });
 
     res
       .status(200)
@@ -307,6 +354,23 @@ router.get("/interview/my", authMiddleware, async (req, res) => {
     res
       .status(500)
       .json({ message: "Unable to get requests", error: err.message });
+  }
+});
+
+// Add this in interviewRoutes.js
+router.get("/interview/:id", authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const interview = await Interview.findById(id);
+
+    if (!interview) {
+      return res.status(404).json({ message: "Interview not found" });
+    }
+
+    res.status(200).json({ interview });
+  } catch (err) {
+    console.log("FETCH INTERVIEW ERROR:", err);
+    res.status(500).json({ message: "Error fetching interview details" });
   }
 });
 

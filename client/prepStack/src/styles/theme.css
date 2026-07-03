@@ -1,0 +1,137 @@
+:root{
+
+--bg:#08111f;
+--bg2:#101827;
+
+--surface:#131d30;
+--surface2:#192339;
+
+--glass:rgba(24,34,54,.72);
+
+--border:rgba(255,255,255,.08);
+
+--primary:#2F7DFF;
+
+--primaryLight:#4C8EFF;
+
+--text:#ffffff;
+
+--muted:#a7b2cb;
+
+--success:#27c281;
+
+--danger:#ff4d6d;
+
+--warning:#ffbe55;
+
+--shadow:
+
+0 0 25px rgba(52,118,255,.12);
+
+}
+
+/* ===========================
+   SIDEBAR
+=========================== */
+
+.sidebar-button {
+
+    height:54px;
+
+    display:flex;
+
+    align-items:center;
+
+    border-radius:12px;
+
+    padding-left:24px;
+
+    gap:18px;
+
+    color:#B8C2D8;
+
+    font-weight:500;
+
+}
+
+.sidebar-button:hover{
+
+background:rgba(255,255,255,.04);
+
+color:white;
+
+}
+
+.sidebar-active{
+
+background:
+
+linear-gradient(
+
+90deg,
+
+rgba(56,120,255,.25),
+
+rgba(56,120,255,.08)
+
+);
+
+color:white;
+
+border:1px solid rgba(79,140,255,.20);
+
+}
+
+/* ===========================
+TOP BUTTON
+=========================== */
+
+.top-button{
+
+width:48px;
+
+height:48px;
+
+border-radius:12px;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+background:rgba(255,255,255,.04);
+
+border:1px solid rgba(255,255,255,.05);
+
+}
+
+.top-button:hover{
+
+background:rgba(79,140,255,.14);
+
+}
+
+/* ===========================
+HEADINGS
+=========================== */
+
+.page-title{
+
+font-size:60px;
+
+font-weight:700;
+
+letter-spacing:-2px;
+
+}
+
+.page-subtitle{
+
+font-size:22px;
+
+color:#9fb0d0;  
+
+margin-top:8px;
+
+}

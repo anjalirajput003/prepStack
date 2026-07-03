@@ -1,0 +1,68 @@
+.glass-card{
+
+background:
+
+linear-gradient(
+
+180deg,
+
+rgba(18,27,46,.88),
+
+rgba(14,22,37,.95)
+
+);
+
+backdrop-filter:blur(20px);
+
+border:1px solid rgba(255,255,255,.06);
+
+}
+
+.glass-panel{
+
+background:
+
+rgba(24,34,54,.60);
+
+backdrop-filter:blur(18px);
+
+border:1px solid rgba(255,255,255,.06);
+
+}
+
+.glass-sidebar{
+
+background:
+
+linear-gradient(
+
+180deg,
+
+rgba(16,24,41,.90),
+
+rgba(14,22,37,.96)
+
+);
+
+backdrop-filter:blur(30px);
+
+border-right:1px solid rgba(255,255,255,.05);
+
+box-shadow:
+
+20px 0 60px rgba(0,0,0,.20);
+
+}
+
+
+/* .glass-sidebar{
+  background:
+    linear-gradient(
+      180deg,
+      rgba(16,24,41,.75),
+      rgba(14,22,37,.85)
+    );
+  backdrop-filter: blur(30px);
+  border-right: 1px solid rgba(255,255,255,.03);
+  box-shadow: none;
+} */
