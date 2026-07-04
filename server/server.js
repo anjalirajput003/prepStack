@@ -14,7 +14,7 @@ import interviewRoutes from "./routes/interviewRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import codeExecutionRoutes from "./routes/codeExecutionRoutes.js";
-import notificatioRoutes from "./routes/notificationRoutes.js"
+import notificatioRoutes from "./routes/notificationRoutes.js";
 
 import socketHandler from "./sockets/socketHandler.js";
 import messageRoutes from "./routes/messageRoutes.js";
@@ -24,10 +24,29 @@ dotenv.config();
 const app = express();
 
 //middlewares
+// app.use(
+//   cors({
+//     origin: "http://localhost:5173",
+//     credentials: true, // This allows cookies to be sent back and forth
+//   }),
+// );
+
+app.get("/", (req, res) => {
+  res.send("PrepStack Backend Running");
+});
+
+const allowedOrigins = ["http://localhost:5173", process.env.CLIENT_URL];
+
 app.use(
   cors({
-    origin: "http://localhost:5173", 
-    credentials: true, // This allows cookies to be sent back and forth
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
   }),
 );
 
@@ -40,7 +59,7 @@ app.use(reviewRoutes);
 app.use(leaderboardRoutes);
 app.use(codeExecutionRoutes);
 app.use(messageRoutes);
-app.use(notificatioRoutes)
+app.use(notificatioRoutes);
 
 //database connection
 mongoose
@@ -58,17 +77,26 @@ mongoose
 const server = http.createServer(app);
 
 //socket.io server
+// const io = new Server(server, {
+//   cors: {
+//     origin: "http://localhost:5173",
+//     methods: ["GET", "POST"],
+//     credentials: true,
+//   },
+// });
+
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true,
   },
 });
 
-
 socketHandler(io);
 
-server.listen(8080, () => {
-  console.log("Server running on port 8080");
+const PORT = process.env.PORT || 8080;
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
