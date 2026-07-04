@@ -13,12 +13,14 @@ import {
   FaClock,
   FaCalendarCheck,
 } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const ReceivedRequests = () => {
   const [requests, setRequests] = useState([]);
   const [selectedInterviewId, setSelectedInterviewId] = useState(null);
   const [scheduledDateTime, setScheduledDateTime] = useState("");
   const { showToast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function getReceiveRequests() {
@@ -357,10 +359,7 @@ const ReceivedRequests = () => {
                               <>
                                 <button
                                   onClick={() =>
-                                    window.open(
-                                      `/interview-room/${request._id}`,
-                                      "_blank",
-                                    )
+                                    navigate(`/interview-room/${request._id}`)
                                   }
                                   className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#2F7DFF] to-[#1A62DA] hover:from-[#4C8EFF] hover:to-[#2F7DFF] text-white font-semibold transition-all shadow-[0_0_15px_rgba(47,125,255,0.3)] flex items-center justify-center gap-2 text-[15px]"
                                 >
