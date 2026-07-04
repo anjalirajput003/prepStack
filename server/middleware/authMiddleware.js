@@ -1,36 +1,3 @@
-// import jwt from "jsonwebtoken";
-// import dotenv from "dotenv";
-
-// dotenv.config();
-
-// const authMiddleware = async (req, res, next) => {
-//   try {
-//     // Read the token directly from the cookie
-//     const token = req.cookies.token;
-
-//     if (!token) {
-//       return res
-//         .status(401)
-//         .json({ message: "Unauthorized, no token provided" });
-//     }
-
-//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-//     req.user = decoded; 
-
-//     next();
-//   } catch (error) {
-//     res.status(401).json({ message: "Unauthorized, invalid token" });
-//   }
-// };
-
-// export default authMiddleware;
-
-
-
-
-
-
-
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js"; // <-- Make sure to import your User model!
 

@@ -85,11 +85,19 @@ router.post("/login", async (req, res) => {
       expiresIn: "7d",
     });
 
+    // res.cookie("token", token, {
+    //   httpOnly: true, 
+    //   secure: process.env.NODE_ENV === "production", 
+    //   sameSite: "lax", 
+    //   maxAge: 7 * 24 * 60 * 60 * 1000, 
+    // });
+
     res.cookie("token", token, {
-      httpOnly: true, // Prevents JavaScript from reading the cookie
-      secure: process.env.NODE_ENV === "production", // HTTPS only in production
-      sameSite: "lax", // Changed to lax for cross-port local development
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res
