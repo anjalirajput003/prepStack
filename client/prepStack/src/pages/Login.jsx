@@ -18,7 +18,7 @@ const Login = () => {
     }
     try {
       setIsLoading(true);
-      const res = await fetch("http://localhost:8080/login", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
         method: "POST",
         credentials: "include", // <-- THIS IS REQUIRED TO ACCEPT THE COOKIE
         headers: { "Content-Type": "application/json" },
@@ -113,14 +113,13 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
-
               </div>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs text-blue-400 hover:text-blue-300 self-end mt-1"
-                >
-                  Forgot password?
-                </Link>
+              <Link
+                to="/forgot-password"
+                className="text-xs text-blue-400 hover:text-blue-300 self-end mt-1"
+              >
+                Forgot password?
+              </Link>
             </div>
 
             <button

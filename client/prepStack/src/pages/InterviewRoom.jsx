@@ -8,7 +8,7 @@ import CodeEditorSection from "../components/interviewRoom/CodeEditorSection";
 import InterviewControls from "../components/interviewRoom/InterviewControls";
 import { fetchWithAuth } from "../api/api";
 
-const socket = io("http://localhost:8080");
+const socket = io(import.meta.env.VITE_API_URL);
 const TOTAL_SECONDS = 3600;
 
 const InterviewRoom = () => {
@@ -64,8 +64,8 @@ const InterviewRoom = () => {
   const sessionTitle = isTechInterview
     ? "Technical Interview"
     : interviewCategory
-    ? `${interviewCategory.charAt(0).toUpperCase()}${interviewCategory.slice(1)} Interview`
-    : "Interview Session";
+      ? `${interviewCategory.charAt(0).toUpperCase()}${interviewCategory.slice(1)} Interview`
+      : "Interview Session";
 
   useEffect(() => {
     socket.on("user-joined", async () => {
@@ -211,7 +211,6 @@ const InterviewRoom = () => {
     socket.emit("toggle-camera", { interviewId, isCameraOff: newState });
   }
 
-
   async function shareScreen() {
     try {
       const screenStream = await navigator.mediaDevices.getDisplayMedia({
@@ -281,7 +280,7 @@ const InterviewRoom = () => {
     try {
       setIsExecuting(true);
       setOutput("Running...");
-      const response = await fetch("http://localhost:8080/execute", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/execute`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sourceCode: code, language: selectedLanguage }),
@@ -312,26 +311,26 @@ const InterviewRoom = () => {
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     if (screenPreviewRef.current) screenPreviewRef.current.srcObject = null;
   }
-async function handleEndInterview() {
-  try {
-    await fetchWithAuth(`/interview/${interviewId}/complete`, {
-      method: "PUT",
-    });
+  async function handleEndInterview() {
+    try {
+      await fetchWithAuth(`/interview/${interviewId}/complete`, {
+        method: "PUT",
+      });
 
-    socket.emit("end-interview", interviewId);
+      socket.emit("end-interview", interviewId);
 
-    cleanupInterview();
+      cleanupInterview();
 
-    setInterviewEnded(true);
+      setInterviewEnded(true);
 
-    alert("Interview completed");
+      alert("Interview completed");
 
-    window.location.href = "/history";
-  } catch (err) {
-    console.log(err);
-    alert(err.message);
+      window.location.href = "/history";
+    } catch (err) {
+      console.log(err);
+      alert(err.message);
+    }
   }
-}
 
   const timePct = Math.max(0, Math.min(1, timeLeft / TOTAL_SECONDS));
   const timerColor =
@@ -353,10 +352,21 @@ async function handleEndInterview() {
     isRemoteCameraOff,
     isRemoteSharingScreen,
   };
-  const chatProps = { messages, messageInput, setMessageInput, handleSendMessage };
+  const chatProps = {
+    messages,
+    messageInput,
+    setMessageInput,
+    handleSendMessage,
+  };
   const controlProps = {
-    isMuted, toggleMute, isCameraOff, toggleCamera,
-    isSharingScreen, shareScreen, stopScreenShare, handleEndInterview,
+    isMuted,
+    toggleMute,
+    isCameraOff,
+    toggleCamera,
+    isSharingScreen,
+    shareScreen,
+    stopScreenShare,
+    handleEndInterview,
   };
 
   function renderSessionHeader() {
@@ -383,7 +393,9 @@ async function handleEndInterview() {
               <span className="w-1 h-1 rounded-full bg-slate-600" />
               <span
                 className={`flex items-center gap-1.5 text-[10.5px] font-semibold ${
-                  connectionStatus === "Connected" ? "text-emerald-400" : "text-amber-400"
+                  connectionStatus === "Connected"
+                    ? "text-emerald-400"
+                    : "text-amber-400"
                 }`}
               >
                 <span
@@ -405,12 +417,28 @@ async function handleEndInterview() {
           </span>
           <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
             <svg viewBox="0 0 40 40" className="w-12 h-12 -rotate-90">
-              <circle cx="20" cy="20" r={ringRadius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
               <circle
-                cx="20" cy="20" r={ringRadius} fill="none" stroke={timerColor} strokeWidth="3"
-                strokeLinecap="round" strokeDasharray={ringCircumference} strokeDashoffset={ringOffset}
+                cx="20"
+                cy="20"
+                r={ringRadius}
+                fill="none"
+                stroke="rgba(255,255,255,0.08)"
+                strokeWidth="3"
+              />
+              <circle
+                cx="20"
+                cy="20"
+                r={ringRadius}
+                fill="none"
+                stroke={timerColor}
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeDasharray={ringCircumference}
+                strokeDashoffset={ringOffset}
                 className={timePct <= 0.2 ? "animate-pulse" : ""}
-                style={{ transition: "stroke-dashoffset 1s linear, stroke 0.6s ease" }}
+                style={{
+                  transition: "stroke-dashoffset 1s linear, stroke 0.6s ease",
+                }}
               />
             </svg>
           </div>
@@ -438,7 +466,9 @@ async function handleEndInterview() {
       >
         <div className="flex flex-col items-center gap-4">
           <span className="w-10 h-10 rounded-full border-2 border-[#5B8DEF]/40 border-t-[#5B8DEF] animate-spin" />
-          <p className="text-slate-500 text-sm">Setting up your interview room…</p>
+          <p className="text-slate-500 text-sm">
+            Setting up your interview room…
+          </p>
         </div>
       </div>
     );
@@ -544,7 +574,9 @@ async function handleEndInterview() {
             >
               Interview Ended
             </h2>
-            <p className="text-slate-500 text-[14px]">Redirecting to history…</p>
+            <p className="text-slate-500 text-[14px]">
+              Redirecting to history…
+            </p>
           </div>
         )}
       </div>

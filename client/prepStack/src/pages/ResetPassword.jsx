@@ -22,11 +22,14 @@ const ResetPassword = () => {
 
     try {
       setIsLoading(true);
-      const res = await fetch(`http://localhost:8080/reset-password/${token}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/reset-password/${token}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+        },
+      );
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.message);

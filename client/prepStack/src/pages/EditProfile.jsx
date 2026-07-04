@@ -336,7 +336,7 @@ const EditProfile = () => {
         imageFormData.append("image", selectedFile);
 
         const imageRes = await fetch(
-          "http://localhost:8080/profile/upload-picture",
+          `${import.meta.env.VITE_API_URL}/profile/upload-picture`,
           {
             method: "POST",
             credentials: "include", // 2. THIS is the magic line that sends your secure cookie!

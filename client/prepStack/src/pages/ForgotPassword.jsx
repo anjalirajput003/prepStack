@@ -14,11 +14,14 @@ const ForgotPassword = () => {
 
     try {
       setIsLoading(true);
-      const res = await fetch("http://localhost:8080/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/forgot-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        },
+      );
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.message);
