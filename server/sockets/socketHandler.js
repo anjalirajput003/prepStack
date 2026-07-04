@@ -33,14 +33,19 @@ export default function socketHandler(io) {
 
 
     socket.on("join-room", (interviewId) => {
+      console.log("JOIN ROOM:", interviewId);
       socket.join(interviewId);
-      socket.data.interviewId = interviewId;
-
+      
       const room = io.sockets.adapter.rooms.get(interviewId);
-
+      console.log("ROOM SIZE:", room?.size);
+      
+      socket.data.interviewId = interviewId;
       const participantsCount = room ? room.size : 0;
+      console.log("Participants:", participantsCount);
+
 
       if (participantsCount === 2) {
+        console.log("Both participants joined");
         socket.to(interviewId).emit("user-joined");
 
         if (!roomTimers[interviewId]) {

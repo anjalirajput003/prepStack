@@ -167,6 +167,7 @@ const InterviewRoom = () => {
             });
         };
 
+        console.log("Joining room:", interviewId);
         socket.emit("join-room", interviewId);
         stream.getTracks().forEach((track) => peer.addTrack(track, stream));
         peer.ontrack = (event) => {
