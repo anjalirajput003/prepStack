@@ -157,7 +157,7 @@ router.post("/forgot-password", async (req, res) => {
     });
 
     // 4. Create the reset link
-    const resetURL = `http://localhost:5173/reset-password/${resetToken}`;
+    const resetURL = `https://prep-stack-two.vercel.app/reset-password/${resetToken}`;
 
     // 5. Send the email
     const mailOptions = {

@@ -23,19 +23,16 @@ dotenv.config();
 
 const app = express();
 
-//middlewares
-// app.use(
-//   cors({
-//     origin: "http://localhost:5173",
-//     credentials: true, // This allows cookies to be sent back and forth
-//   }),
-// );
+
 
 app.get("/", (req, res) => {
   res.send("PrepStack Backend Running");
 });
 
-const allowedOrigins = ["http://localhost:5173", process.env.CLIENT_URL];
+const allowedOrigins = [
+  "https://prep-stack-two.vercel.app",
+  process.env.CLIENT_URL,
+];
 
 app.use(
   cors({
@@ -76,14 +73,6 @@ mongoose
 //http server using express app
 const server = http.createServer(app);
 
-//socket.io server
-// const io = new Server(server, {
-//   cors: {
-//     origin: "http://localhost:5173",
-//     methods: ["GET", "POST"],
-//     credentials: true,
-//   },
-// });
 
 const io = new Server(server, {
   cors: {
