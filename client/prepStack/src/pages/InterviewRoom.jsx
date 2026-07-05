@@ -150,9 +150,10 @@ const InterviewRoom = () => {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
           audio: {
-            echoCancellation: true, // Filters out speaker feedback
-            noiseSuppression: true, // Filters out background static/fans
-            autoGainControl: true, // Normalizes speaking volume automatically
+            echoCancellation: { exact: true },
+            noiseSuppression: { exact: true },
+            autoGainControl: { exact: true },
+            sampleRate: 44100,
           },
         });
         localStreamRef.current = stream;
