@@ -187,6 +187,14 @@ const InterviewRoom = () => {
     };
   }, []);
 
+  useEffect(() => {
+    // When isCategoryLoading becomes false, the VideoSection is finally rendered.
+    // We check if the video tag exists and if the camera stream is ready, then attach it!
+    if (!isCategoryLoading && localVideoRef.current && localStreamRef.current) {
+      localVideoRef.current.srcObject = localStreamRef.current;
+    }
+  }, [isCategoryLoading]);
+
   function handleSendMessage() {
     if (!messageInput.trim()) return;
     socket.emit("send-message", { interviewId, message: messageInput });
