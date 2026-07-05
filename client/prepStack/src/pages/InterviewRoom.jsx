@@ -149,7 +149,11 @@ const InterviewRoom = () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
-          audio: true,
+          audio: {
+            echoCancellation: true, // Filters out speaker feedback
+            noiseSuppression: true, // Filters out background static/fans
+            autoGainControl: true, // Normalizes speaking volume automatically
+          },
         });
         localStreamRef.current = stream;
         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
